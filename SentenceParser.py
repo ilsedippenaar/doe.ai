@@ -20,6 +20,7 @@ class SentenceParser:
         return parsed
 
 
-
+par = SentenceParser("I really like eating watermelons.")
+print(par.parsePCFG())
 grammar = CFG.fromstring(demo_grammar)
 print(grammar)

@@ -11,6 +11,7 @@ _dataDir = Path("data")
 if not _dataDir.exists():
     _dataDir.mkdir()
 
+
 class _AbstractDataSource(ABC):
     @property
     @abstractmethod
@@ -47,7 +48,7 @@ class _AliceText(_AbstractDataSource):
                 f.write(data)
 
         with open(self._localPath, 'r') as f:
-            data = [l for l in f.readline()]
+            data = f.readline().split()
         return data
 
 
@@ -82,4 +83,3 @@ class DataSource(Enum):
     ALICE_TEXT = _AliceText()
     CORNELL_MOVIE_CORPUS = _CornellMovieCorpus()
     CORNELL_MOVIE_QUOTES_CORPUS = "https://www.cs.cornell.edu/~cristian/memorability_files/cornell_movie_quotes_corpus.zip"
-

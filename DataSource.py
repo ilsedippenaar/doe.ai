@@ -42,7 +42,7 @@ class _AliceText(_AbstractDataSource):
                 data = response.read().decode("ascii")
             data = data.split('\r\n')[76:-371]
             data = [line for line in data if line != "" and "*" not in line and "[Illustration]" not in line]
-            data = sub(r"_([\w\']+)?_", r"\1", " ".join(data))
+            data = sub(r"_([\w\']+)?_", r"\1", " ".join(data))   # REMOVES UNDERLINES
             with open(self._localPath, 'w') as f:
                 f.write(data)
 

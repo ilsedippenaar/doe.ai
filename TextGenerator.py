@@ -27,7 +27,7 @@ class TextGenerator:
         with open(self.dataFile, 'r') as f:
             words.append(f.readline().split())
         count = [['UNK', -1]]
-        count.extend(Counter(words).most_common(self.vocabSize - 1))
+        count.extend(Counter(words).most_common(self.vocabSize - 1))  # take vocabsize number of words (top)
         wordDict = {wordCount[0]: i for i, wordCount in enumerate(count)}
         data = [wordDict[word] if word in wordDict else 0 for word in words]
         return data, wordDict, dict(zip(wordDict.values(), wordDict.keys()))

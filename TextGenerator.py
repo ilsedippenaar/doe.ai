@@ -1,37 +1,48 @@
 import numpy as np
 import tensorflow as tf
 from collections import Counter
+from pathlib import Path
 
 
 class TextGenerator:
 
-    def __init__(self, rawData, savePath, stateSize=512, numHidden=50, maxVocabSize=5000):
-        try:
-            if savePath.is_dir():
-                self._savePath = savePath
-            else:
-                ValueError('savePath must be a directory.')
-        except AttributeError:
-            ValueError('savePath must be a Path object.')
+    def __init__(self, rawData, savePath, stateSize=512, wordsToFeed=50, maxVocabSize=5000):
+        '''
+        The TextGenerator class is trained on a sequence of words and can generate
+        an arbitrary sequence of words based on the data.
+        :param rawData: A list of words (should all be lowercase and without punctuation)
+        :param savePath: The location on disk where to save the model after training
+        :param stateSize: The size of the LSTM state vector that maintains a "context" for a point in the sequence
+        :param wordsToFeed: The number of iterations in the RNN to do across the sequence
+        :param maxVocabSize: The maximum number of words which the model can generate
+        '''
+        if not isinstance(savePath, Path):
+            savePath = Path(savePath)
+        if savePath.is_dir():
+            self._savePath = savePath / savePath.stem
+        else:
+            raise ValueError('savePath must be a directory.')
 
         # Architecture
         self.stateSize = stateSize
-        self.numHidden = numHidden
+        self.wordsToFeed = wordsToFeed
 
         # Learning parameters
         self.numEpochs = 100
-        self.batchSize = 25
+        self.batchSize = 50
         self.wordsToFeed = 50
         self.learningRate = 0.01
         self.momentum = 0.5
 
         self.data, self.wordDict, self.reverseWordDict, self.vocabSize = self._loadData(rawData, maxVocabSize)
 
-    def _loadData(self, rawData, maxVocabSize):
-        count = [['UNK', -1]]
+    @staticmethod
+    def _loadData(rawData, maxVocabSize):
+        count = [['UNK', -1]]  # 'UNK' = uncommon token
         count.extend(Counter(rawData).most_common(maxVocabSize - 1))
         wordDict = {wordCount[0]: i for i, wordCount in enumerate(count)}
-        data = [wordDict[word] if word in wordDict else 0 for word in rawData]
+        data = [wordDict[word] if word in wordDict else 0 for word in rawData]  # unknown words -> 0
+        # build reverse dictionary (0 -> 'UNK')
         return data, wordDict, dict(zip(wordDict.values(), wordDict.keys())), len(wordDict)
 
     def _makeBatch(self):
@@ -47,9 +58,9 @@ class TextGenerator:
         return inputs, labels
 
     def _printSummary(self, step, loss, inputs, labels, predictedLabels):
-        print('Loss at step {} = {:5f}'.format(step, loss))
+        print('Loss at step {} = {:.2f}'.format(step, loss))
         if step % (self.numEpochs // 10) == 0:
-            print('\tAccuracy = {:5f}'.format(np.mean(np.array(labels) == np.array(predictedLabels))))
+            print('\tAccuracy = {:.2f} %'.format(100*np.mean(np.array(labels) == np.array(predictedLabels))))
             for batchNum,data in enumerate(inputs):
                 text = ' '.join([self.reverseWordDict[x[0]] for x in data])
                 print('\tText = {}'.format(text))
@@ -62,10 +73,12 @@ class TextGenerator:
             # the last 1 in the dimension here could be changed later for word embeddings
             inputs = tf.placeholder(shape=(self.batchSize, self.wordsToFeed, 1), dtype=tf.float32, name='inputs')
             labels = tf.placeholder(shape=(self.batchSize,), dtype=tf.int32, name='labels')
+            # TODO(ilse): make this not always constant so that we can feed variable length sentences to the model
             sequence_length = tf.constant([self.wordsToFeed], shape=(self.batchSize,), dtype=tf.int32)
 
             cell = tf.nn.rnn_cell.BasicLSTMCell(self.stateSize)
             # TODO(ilse): add initialize state for the RNN (i.e. truncated_normal?)
+            # dynamic_rnn requires inputs to be 3-dimensional
             output, _ = tf.nn.dynamic_rnn(cell, inputs, sequence_length=sequence_length, dtype=tf.float32)
             weights = tf.Variable(tf.truncated_normal(shape=(self.batchSize, self.stateSize, self.vocabSize)))
             bias = tf.Variable(tf.zeros(shape=(self.batchSize, self.vocabSize)))

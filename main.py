@@ -11,7 +11,7 @@ if __name__ == '__main__':
         model1Dir.mkdir()
 
     data = DataSource.ALICE_TEXT.value.getData()
-    textGenerator = TextGenerator(data, model1Dir)
+    textGenerator = TextGenerator(data, model1Dir, maxVocabSize=1000)
     #textGenerator.testBatch(num=1)
     textGenerator.train()
     #print(textGenerator.generateText(100))

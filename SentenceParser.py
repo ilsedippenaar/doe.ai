@@ -54,3 +54,4 @@ print(tagged)
 mini_grammar = PCFG(Nonterminal('S'), treebank.parsed_sents()[0].productions())
 parser = nltk.parse.EarleyChartParser(mini_grammar)
 print(parser.parse(treebank.sents()[0]))
+

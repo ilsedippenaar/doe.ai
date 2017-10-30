@@ -11,6 +11,7 @@ _dataDir = Path("data")
 if not _dataDir.exists():
     _dataDir.mkdir()
 
+
 class _AbstractDataSource(ABC):
     @property
     @abstractmethod
@@ -40,14 +41,15 @@ class _AliceText(_AbstractDataSource):
         if not self._localPath.exists():
             with urlopen(self._url) as response:
                 data = response.read().decode("ascii")
-            data = data.split('\r\n')[76:-371]
+            data = data.split('\r\n')[76:-371]  # this is just hardcoded to remove extraneous lines from the data
             data = [line for line in data if line != "" and "*" not in line and "[Illustration]" not in line]
-            data = sub(r"_([\w\']+)?_", r"\1", " ".join(data))   # REMOVES UNDERLINES
+            data = sub(r"_([\w\']+)?_", r"\1", " ".join(data))  # eliminates any underscores around a word
+            # TODO: make all data lower case and eliminate punctuation for easier word labelling
             with open(self._localPath, 'w') as f:
                 f.write(data)
 
         with open(self._localPath, 'r') as f:
-            data = [l for l in f.readline()]
+            data = f.readline().split()
         return data
 
 
@@ -82,4 +84,3 @@ class DataSource(Enum):
     ALICE_TEXT = _AliceText()
     CORNELL_MOVIE_CORPUS = _CornellMovieCorpus()
     CORNELL_MOVIE_QUOTES_CORPUS = "https://www.cs.cornell.edu/~cristian/memorability_files/cornell_movie_quotes_corpus.zip"
-

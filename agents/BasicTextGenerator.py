@@ -1,13 +1,13 @@
-import numpy as np
 import tensorflow as tf
+import numpy as np
 from collections import Counter
-from pathlib import Path
+from agents.ChatAgent import ChatAgent
 
 
-class TextGenerator:
+class BasicTextGenerator(ChatAgent):
 
     def __init__(self, rawData, savePath, stateSize=512, wordsToFeed=50, maxVocabSize=5000):
-        '''
+        """
         The TextGenerator class is trained on a sequence of words and can generate
         an arbitrary sequence of words based on the data.
         :param rawData: A list of words (should all be lowercase and without punctuation)
@@ -15,13 +15,8 @@ class TextGenerator:
         :param stateSize: The size of the LSTM state vector that maintains a "context" for a point in the sequence
         :param wordsToFeed: The number of iterations in the RNN to do across the sequence
         :param maxVocabSize: The maximum number of words which the model can generate
-        '''
-        if not isinstance(savePath, Path):
-            savePath = Path(savePath)
-        if savePath.is_dir():
-            self._savePath = savePath / savePath.stem
-        else:
-            raise ValueError('savePath must be a directory.')
+        """
+        super().__init__(rawData, savePath)
 
         # Architecture
         self.stateSize = stateSize
@@ -69,7 +64,7 @@ class TextGenerator:
 
     def _buildModel(self):
         graph = tf.Graph()
-        with graph.as_default():
+        with graph.as_default(): # defines a name scope for all variables below (not necessary)
             # the last 1 in the dimension here could be changed later for word embeddings
             inputs = tf.placeholder(shape=(self.batchSize, self.wordsToFeed, 1), dtype=tf.float32, name='inputs')
             labels = tf.placeholder(shape=(self.batchSize,), dtype=tf.int32, name='labels')
@@ -110,7 +105,7 @@ class TextGenerator:
                 self._printSummary(i, predictedLoss, batchInputs, batchLabels, batchPredictedLabels)
             saver.save(sess, str(self._savePath))
 
-    def generateText(self, numWords):
+    def respond(self, prompt):
         if not self._savePath.exists():
             print('Saved model not found at {}'.format(str(self._savePath)))
             return

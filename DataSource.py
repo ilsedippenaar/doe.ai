@@ -37,19 +37,23 @@ class _AliceText(_AbstractDataSource):
     def _url(self):
         return "https://ia801405.us.archive.org/18/items/alicesadventures19033gut/19033.txt"
 
-    def getData(self):
-        if not self._localPath.exists():
+    def getData(self, force=False):
+        if not self._localPath.exists() or force:
             with urlopen(self._url) as response:
                 data = response.read().decode("ascii")
             data = data.split('\r\n')[76:-371]  # this is just hardcoded to remove extraneous lines from the data
-            data = [line for line in data if line != "" and "*" not in line and "[Illustration]" not in line]
-            data = sub(r"_([\w\']+)?_", r"\1", " ".join(data))  # eliminates any underscores around a word
-            # TODO: make all data lower case and eliminate punctuation for easier word labelling
+            data = [line for line in data if line != "" and "*" not in line and "Illustration" not in line]
+            data = sub(r"[\",'();:]", "", " ".join(data))  # remove punctuation except ., !, and ?
+            data = sub(r"--", " ", data)  # turn dashes into spaces
+            data = sub(r"_([\w]+)?_", r"\1", data)  # eliminates any underscores around a word
+            data = sub(r"\s+", " ", data)  # make all whitespace just a single space
+            data = data.lower()
+            data = sub(r"([!?.+])+\s*", r" \1\n", data)  # put spaces before punctuation and newlines after them
             with open(self._localPath, 'w') as f:
                 f.write(data)
 
         with open(self._localPath, 'r') as f:
-            data = f.readline().split()
+            data = [line.split() for line in f]
         return data
 
 

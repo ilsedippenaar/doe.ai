@@ -2,8 +2,13 @@
 import nltk
 from nltk import CFG
 from nltk.parse.generate import demo_grammar
+from nltk.corpus import treebank
+from itertools import islice
+from nltk.grammar import PCFG, induce_pcfg, toy_pcfg1, toy_pcfg2
 
 from nltk import ParserI
+from nltk.parse import ViterbiParser
+from nltk.grammar import toy_pcfg1, toy_pcfg2
 from nltk import ProbabilisticTree
 from nltk import ProbabilisticDependencyGrammar
 from nltk import ProbabilisticNonprojectiveParser
@@ -13,45 +18,46 @@ from nltk import ProbabilisticProduction
 import nltk
 from nltk.corpus import treebank
 from nltk.grammar import PCFG, Nonterminal
+import language_check
 
 # do PCFG demo
-
-
+# no FRAG, X, NX, same word two in a row,
 
 class SentenceParser:
-    def __init__(self, sentence):
-        self.sentence = sentence
+    def __init__(self):
+        self.checker = language_check.LanguageTool('en-US')
 
-    def getPOSTags(self):
-        tokens = nltk.word_tokenize(self.sentence)
+    def getPOSTags(self, sentence):
+        tokens = nltk.word_tokenize(sentence)
         tagTuples = nltk.pos_tag(tokens)
         return tagTuples
 
-    def getPCFG(self):
-        simpleG = "S -> NP VP [1.0] " \
-                  "NP -> DT NN [0.3] " \
-                  "NP -> NN [0.3] " \
-                  "NP -> DT JJ NN [0.3] "  \
-                  "NP -> NP PP [0.1] " \
-                  "VP -> V NP [0.2] " \
-                  "VP -> V [0.3] " \
-                  "VP -> VP JJ [0.1] " \
-                  "VP -> VP PP [0.1] " \
-                  "VP -> VP RB [0.2] " \
-                  "VP -> V NP PP [0.1] " \
-                  "PP -> PRP NP [1.0]"
-        pcfg = nltk.PCFG.fromstring(simpleG)  # add relative and superlative clauses + probabilities
-        return pcfg
+    def isCorrect(self, sentence):
+        checked = self.checker.check(sentence.capitalize())
+        if len(checked) == 0:
+            return True
+        return False
 
 
-parser = SentenceParser("The cat ate the mouse.")
-tagged = parser.getPOSTags()
-print(tagged)
+
+#parser = SentenceParser("The cat ate the mouse.")
+#tagged = parser.getPOSTags()
+#print(tagged)
 #print(parser.getPCFG())
 
-#tbank_productions = set(production for sent in treebank.parsed_sents() for production in sent.productions())
-#tbank_grammar = PCFG(Nonterminal('S'), list(tbank_productions))
-mini_grammar = PCFG(Nonterminal('S'), treebank.parsed_sents()[0].productions())
-parser = nltk.parse.EarleyChartParser(mini_grammar)
-print(parser.parse(treebank.sents()[0]))
+# language check stuff
+tool = language_check.LanguageTool('en-US')
+
+text1 = "The cat ate the mouse."
+text2 = "Cat the are the mouse."
+text3 = "I I I I I I."
+text4 = "Smompy druid 20 darns."
+text5 = "Dog wanted dug."
+text6 = "Tell me"
+
+parser = SentenceParser()
+print(parser.isCorrect(text1))
+print(parser.isCorrect(text2))
+
+
 
